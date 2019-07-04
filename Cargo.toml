@@ -1,0 +1,10 @@
+[package]
+name = "remind"
+version = "0.1.0"
+authors = ["Bill Wood <wpwoodjr@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+itertools = "*"
+dirs = "*"
+chrono = "*"
