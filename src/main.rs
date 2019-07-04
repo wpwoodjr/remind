@@ -1,4 +1,6 @@
 /*
+Simple reminder utility in Rust, per https://programmingpraxis.com/2019/07/02/remind/
+
 NAME
 
     remind -- print reminders of upcoming events
@@ -43,6 +45,7 @@ EXAMPLE
     7 4 Independence Day
     2019 7 2 lunch with Pat
 */
+
 use itertools::Itertools;
 use chrono::prelude::*;
 
