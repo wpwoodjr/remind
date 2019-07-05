@@ -70,7 +70,7 @@ struct Reminders {
 #[derive(Debug)]
 struct ReminderItem {
     date: NaiveDate,
-    has_year: bool,
+    recurring: bool,
     message: String,
 }
 
@@ -81,8 +81,7 @@ impl Reminders {
             None => return Err("could not find home directory!".to_string())
         };
         path.push(path_str);
-        let today = Local::today().naive_local();
-        let mut reminder = Reminders { path, today, reminder_items: vec!() };
+        let mut reminder = Reminders { path, today: Local::today().naive_local(), reminder_items: vec!() };
         if let Ok(data) = std::fs::read_to_string(&reminder.path) {
             for line in data.split("\n").filter(|&l| l != "") {
                 reminder.add(reminder.parse_item(line.split(" ").collect::<Vec<_>>().into_iter())?);
@@ -91,14 +90,16 @@ impl Reminders {
         Ok(reminder)
     }
     fn add(&mut self, item: ReminderItem) {
-        self.reminder_items.push(item);
+        if item.date.num_days_from_ce() >= self.today.num_days_from_ce() {
+            self.reminder_items.push(item);
+            self.reminder_items.sort_unstable_by_key(|item| item.date);
+        }
     }
     fn stringify(&self, ndays: i32) -> String {
-        let days_ce = self.today.num_days_from_ce();
-        self.reminder_items.iter()
-            .filter(|item|
-                item.date.num_days_from_ce() >= days_ce &&
-                (ndays == 0 || item.date.num_days_from_ce() < (days_ce + ndays)))
+        let max_day = self.today.num_days_from_ce() + ndays;
+        self.reminder_items
+            .iter()
+            .filter(|item| ndays == 0 || item.date.num_days_from_ce() < max_day)
             .map(|i| i.to_string() + "\n")
             .join("")
     }
@@ -145,7 +146,7 @@ impl Reminders {
             self.next_recurring_date(month, day)
         };
         if let Some(date) = date {
-            Ok(ReminderItem{ date, has_year: year.is_some(), message: args.join(" ") })
+            Ok(ReminderItem{ date, recurring: year.is_none(), message: args.join(" ") })
         } else {
             usage
         }
@@ -175,7 +176,7 @@ impl Reminders {
 
 impl std::fmt::Display for ReminderItem {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        if self.has_year {
+        if !self.recurring {
             write!(f, "{} ", self.date.year())?;
         }
         write!(f, "{} {} {}", self.date.month(), self.date.day(), self.message)
