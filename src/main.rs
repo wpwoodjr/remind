@@ -90,16 +90,16 @@ impl Reminders {
         Ok(reminder)
     }
     fn add(&mut self, item: ReminderItem) {
-        if item.date.num_days_from_ce() >= self.today.num_days_from_ce() {
+        if item.date >= self.today {
             self.reminder_items.push(item);
             self.reminder_items.sort_unstable_by_key(|item| item.date);
         }
     }
-    fn stringify(&self, ndays: i32) -> String {
-        let max_day = self.today.num_days_from_ce() + ndays;
+    fn stringify(&self, ndays: i64) -> String {
+        let max_day = self.today + chrono::Duration::days(ndays);
         self.reminder_items
             .iter()
-            .filter(|item| ndays == 0 || item.date.num_days_from_ce() < max_day)
+            .filter(|item| ndays == 0 || item.date < max_day)
             .map(|i| i.to_string() + "\n")
             .join("")
     }
@@ -156,14 +156,14 @@ impl Reminders {
         if month == 2 && day == 29 {
             loop {
                 if let Some(date) = NaiveDate::from_ymd_opt(year, 2, 29) {
-                    if date.num_days_from_ce() >= self.today.num_days_from_ce() {
+                    if date >= self.today {
                         break Some(date);
                     }
                 }
                 year += 1;
             }
         } else if let Some(date) = NaiveDate::from_ymd_opt(year, month, day) {
-            if date.num_days_from_ce() >= self.today.num_days_from_ce() {
+            if date >= self.today {
                 Some(date)
             } else {
                 NaiveDate::from_ymd_opt(year + 1, month, day)
